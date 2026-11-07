@@ -12,5 +12,6 @@ work is done while either fails.
 - `src/index.ts`: plugin setup, hooks, and command handlers.
 - `src/state.ts`: per-session state and write queue.
 - `test/`: tests, excluded from the npm package.
+- `scripts/check-release.ts`: publish guard (version, files, clean tree, tag).
 - `.rumdl.toml`: Markdown lint rules; MD013 is disabled.
 - `human-friendly-coding-spec.md`: the specification.

@@ -28,7 +28,7 @@ npm publish --dry-run
 - `LICENSE`、README 2言語、`rules/SKILL.md`、`src` 4ファイル
 - テストと開発設定は含まれない
 
-`npm publish`時は`prepublishOnly`が`npm run verify`を自動実行する。
+`npm publish`時は`prepublishOnly`が`npm run verify`とリリース検査を自動実行する。版が未公開であること、最新より大きいこと、必須ファイル、clean tree、タグ未作成を確認する。
 
 ## 3. 公開する
 
