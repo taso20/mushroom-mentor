@@ -185,9 +185,9 @@ if can_view_billing:
 
 上記を利用者向けの操作契約とする．登録方法は対象OpenCodeのAPIに合わせる．不正な引数では状態を変更せず，正しい使い方を表示する．ON/OFFを繰り返しても状態を反転させない．
 
-状態表示は`Mushroom: ON`または`Mushroom: OFF`の1行に統一する．Ponytailの`ponytail <mode>`に相当し，切替・照会・引数なしのどの経路でも同じ表現を使う．`ON`と`OFF`は翻訳しない状態記号とする．引数は前後空白を除いて小文字で比較する．`on`，`off`，`status`以外の語，およびこれらへ余分な語を付けた入力は不正とする．`/mushroom-review`の引数は対象指定として扱い，`/mushroom-help`の引数は無視する．
+状態表示は`Mushroom: ON`または`Mushroom: OFF`を含む短い1行を基本とする．Ponytailの`ponytail <mode>`に相当し，切替・照会・引数なしのどの経路でも同じ表現を使う．`ON`と`OFF`は翻訳しない状態記号とする．引数は前後空白を除いて小文字で比較する．`on`，`off`，`status`以外の語，およびこれらへ余分な語を付けた入力は不正とする．`/mushroom-review`の引数は対象指定として扱い，`/mushroom-help`の引数は無視する．
 
-状態表示と不正引数時の案内は，セッションへのsyntheticメッセージで行う．応答生成を起こさず，通常の会話を妨げないこと．
+状態表示と不正引数時の案内は，コマンドから送る通常のプロンプトで行う．モデルには指定の1行だけを返すよう指示する．
 
 状態は切替時と照会時にだけ表示し，通常応答ごとには繰り返さない．新規セッションの開始時には表示しない．操作案内やレビューの説明は利用者の対話言語に合わせる．モデル・生成設定・権限を無断で変更しない．
 
@@ -219,7 +219,7 @@ if can_view_billing:
 
 未登録の状態は新規としてONにする．読出し不能，不正な保存値，未知のスキーマは未登録と区別し，状態不明を通知してその呼出しへの自動適用を見送る．保存値を無断で初期化しない．
 
-保存失敗時は成功表示せず，既知の従前状態を保持する．規則読込・適用の失敗も通知し，利用者の通常作業を継続可能にする．通知は第8節と同じくsyntheticメッセージで行う．セッション削除時に対応する保存状態を削除する．イベントの取得方法と残存状態の清掃手順は，対象版のAPIに合わせて実装する．
+保存失敗時は成功表示せず，既知の従前状態を保持する．規則読込・適用の失敗も通知し，利用者の通常作業を継続可能にする．フック内の失敗はサーバーログへ記録する．セッション削除時に対応する保存状態を削除する．イベントの取得方法と残存状態の清掃手順は，対象版のAPIに合わせて実装する．
 
 ## 10．差分レビュー
 
@@ -256,7 +256,7 @@ if can_view_billing:
 
 ## 11．技術構成
 
-初版は，調査したOpenCode V2のプラグインAPIを対象とする．V1互換層は初版に含めない．最低対応の数値バージョンは，実装時の型確認と配布パッケージの導入試験で確定する．V2全版での互換性を主張しない．
+初版は，調査したOpenCode V2のプラグインAPIを対象とする．V1互換層は初版に含めない．実装開始時の候補は，OpenCode 2.2.5と`@opencode/plugin` 2.2.5とする．最低対応の数値バージョンは，導入試験で確定する．V2全版での互換性を主張しない．
 
 | 部分 | 責務 |
 |---|---|
@@ -265,7 +265,7 @@ if can_view_billing:
 | 操作とレビュー指示 | コマンド処理とレビュー依頼を提供する |
 | 評価資料 | 入出力課題，評価票，公開前チェックを管理する |
 
-規則はSkill形式の単一原本から供給し，アダプター側に別の規則本文を手書きして重複管理しない．Skillの任意読込だけに常時適用を任せず，アダプターで制御する．評価資料は通常のプロンプトへ常時含めない．
+規則はSkill形式の単一原本から供給し，アダプター側に別の規則本文を手書きして重複管理しない．Skillの任意読込だけに常時適用を任せず，アダプターで制御する．登録する規則Skillは`autoinvoke`を無効にし，モデルの一覧へ出さない．規則の適用はフックで行う．評価資料は通常のプロンプトへ常時含めない．
 
 確認したV2 APIに基づく実装接続先：
 
@@ -274,13 +274,15 @@ if can_view_billing:
 - 通常呼出し：`ctx.session.hook("context", ...)`
 - 圧縮：`ctx.session.hook("compaction", ...)`
 - 永続状態：`ctx.storage`
-- 状態表示：`ctx.session.synthetic`
+- セッション削除：`ctx.event.subscribe({ types: ["session.deleted"] })`
 
 フックでは送信するsystem部分へ規則を追加し，ユーザーの発言や既存設定を書き換えない．状態の保存キーにはセッションIDとMushroomの識別用接頭辞を用いる．正確な型，保存スコープ，イベント名，cleanup方法は対象版のSDKで確認する．
 
 ## 12．配布・言語・ライセンス
 
 - GitHubでソース公開し，npmで配布する．
+- `package.json`は`type: module`とし，`exports`の`"."`でサーバー部品を公開する．`@opencode/plugin`を依存に含める．
+- 配布物の`files`へ，規則の`SKILL.md`を含める．Skill登録が要求する実パスを配布後に確保する．
 - 規則本文・READMEは英語を基本とし，日本語READMEも用意する．
 - READMEの言語と，生成コードのコメント言語は別に扱う．
 - ライセンスはMITとする．
@@ -304,7 +306,7 @@ if can_view_billing:
 | ID | 確認項目 |
 |---|---|
 | A01 | 配布用アーカイブから導入し，規則・コマンド・LICENSEが揃う |
-| A02 | 新規ON，ON/OFF，status，引数なし復帰，helpが操作仕様どおり動き，状態が1行で表示され，表示が応答生成を起こさない |
+| A02 | 新規ON，ON/OFF，status，引数なし復帰，helpが操作仕様どおり動き，状態が短い応答で表示される |
 | A03 | `/mushroom`の不正引数と余分な語で状態が変わらず，同じON/OFF操作を繰り返しても反転しない |
 | A04 | 2つのセッションの状態が干渉しない |
 | A05 | 再開時に状態が復元され，分岐・子セッションは新規IDの規定に従う |
@@ -361,10 +363,13 @@ if can_view_billing:
 - [Ponytail参照コミット](https://github.com/DietrichGebert/ponytail/tree/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846)
 - [OpenCodeアダプター](https://github.com/DietrichGebert/ponytail/blob/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846/.opencode/plugins/ponytail.mjs)
 - [PonytailのLICENSE](https://github.com/DietrichGebert/ponytail/blob/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846/LICENSE)
-- [OpenCode Plugins](https://opencode.ai/docs/plugins/)
-- [OpenCode Server plugins](https://opencode.ai/docs/build/plugins/server)
-- [OpenCode Skills](https://opencode.ai/docs/skills/)
-- [OpenCode Commands](https://opencode.ai/docs/commands/)
+- [OpenCode Plugins](https://opencode.ai/v2/docs/build/plugins)
+- [OpenCode Server plugins](https://opencode.ai/v2/docs/build/plugins/server)
+- [OpenCode Skills](https://opencode.ai/v2/docs/skills)
+- [OpenCode Commands](https://opencode.ai/v2/docs/commands)
+- [OpenCode V2 API](https://opencode.ai/v2/docs/api)
+
+資料はOpenCode V2のドキュメントを対象とする．`https://opencode.ai/docs/`のV1向けページは参照しない．
 
 Ponytailでは，V2のcontext・compactionフックへの規則適用，Markdownからのコマンド・Skill登録，共通ファイルによるモード保存，V1/V2の入口を確認した．Mushroomでは操作感を参考にしつつ，状態をセッション単位へ変更し，初版はV2に絞る．
 
