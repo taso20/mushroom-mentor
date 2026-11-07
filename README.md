@@ -6,6 +6,8 @@ honest about why.
 Mushroom is inspired by Ponytail. It does not depend on it, and you should not
 run both at once.
 
+[日本語 README](README.ja.md)
+
 ## Install
 
 The package is not published yet. For now, add this directory to the `plugins`
