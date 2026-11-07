@@ -10,17 +10,20 @@ run both at once.
 
 ## Install
 
-The package is not published yet. For now, add this directory to the `plugins`
-array in `opencode.json(c)`:
+```sh
+opencode plugin add mushroom-mentor
+```
+
+Or add it to the `plugins` array in `opencode.json(c)`:
 
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["/absolute/path/to/mushroom"]
+  "plugins": ["mushroom-mentor"]
 }
 ```
 
-After the first npm release, the package name will replace the path.
+For local development, point `plugins` at this directory instead.
 
 ## Use
 

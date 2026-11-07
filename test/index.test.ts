@@ -183,18 +183,21 @@ describe("mushroom command", () => {
 });
 
 describe("rules injection", () => {
-  test("adds the rules for a new session and skips an off session", async () => {
+  test("context and compaction add rules when on and skip when off", async () => {
     const { hooks, store } = await start();
-    const context = hooks.find((hook) => hook.name === "context");
-    if (!context) throw new Error("context hook not registered");
+    store.set(stateKey("off"), { schema: 1, enabled: false });
 
-    const fresh = { sessionID: "new", system: [] as { type: "text"; text: string }[] };
-    await context.run(fresh);
-    expect(fresh.system).toHaveLength(1);
+    for (const name of ["context", "compaction"]) {
+      const hook = hooks.find((candidate) => candidate.name === name);
+      if (!hook) throw new Error(`${name} hook not registered`);
 
-    store.set(stateKey("old"), { schema: 1, enabled: false });
-    const off = { sessionID: "old", system: [] as { type: "text"; text: string }[] };
-    await context.run(off);
-    expect(off.system).toHaveLength(0);
+      const on = { sessionID: "fresh", system: [] as { type: "text"; text: string }[] };
+      await hook.run(on);
+      expect(on.system).toHaveLength(1);
+
+      const off = { sessionID: "off", system: [] as { type: "text"; text: string }[] };
+      await hook.run(off);
+      expect(off.system).toHaveLength(0);
+    }
   });
 });

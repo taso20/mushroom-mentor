@@ -8,16 +8,20 @@ Ponytailに着想を得た独立したプラグイン。Ponytailには依存せ�
 
 ## 導入
 
-まだnpmへ公開していない。今はこのディレクトリを`opencode.json(c)`の`plugins`へ追加する。
+```sh
+opencode plugin add mushroom-mentor
+```
+
+または`opencode.json(c)`の`plugins`へ追加する。
 
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["/absolute/path/to/mushroom"]
+  "plugins": ["mushroom-mentor"]
 }
 ```
 
-初回公開後はパッケージ名へ置き換える。
+ローカル開発では、このディレクトリを`plugins`へ指定する。
 
 ## 使い方
 
