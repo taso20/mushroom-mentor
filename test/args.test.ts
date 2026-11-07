@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseMushroomArgs } from "./args.ts";
+import { parseMushroomArgs } from "../src/args.ts";
 
 describe("parseMushroomArgs", () => {
   test("bare command turns on", () => {

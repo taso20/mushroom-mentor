@@ -11,4 +11,6 @@ work is done while either fails.
 - `rules/SKILL.md`: the only source of the coding rules.
 - `src/index.ts`: plugin setup, hooks, and command handlers.
 - `src/state.ts`: per-session state and write queue.
+- `test/`: tests, excluded from the npm package.
+- `.rumdl.toml`: Markdown lint rules; MD013 is disabled.
 - `human-friendly-coding-spec.md`: the specification.

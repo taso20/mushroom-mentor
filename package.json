@@ -1,6 +1,6 @@
 {
   "name": "mushroom-mentor",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Coding rules that keep generated code clear, changeable, and honest about why",
   "keywords": [
     "opencode",
@@ -8,6 +8,14 @@
     "coding-rules",
     "code-review"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taso20/mushroom-mentor.git"
+  },
+  "homepage": "https://github.com/taso20/mushroom-mentor#readme",
+  "bugs": {
+    "url": "https://github.com/taso20/mushroom-mentor/issues"
+  },
   "type": "module",
   "license": "MIT",
   "exports": {

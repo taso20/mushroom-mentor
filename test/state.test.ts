@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { Plugin } from "@opencode/plugin";
-import { isEnabled, readState, runSerial, stateKey, writeState } from "./state.ts";
+import { isEnabled, readState, runSerial, stateKey, writeState } from "../src/state.ts";
 
 function fakeContext(store = new Map<string, unknown>()): Plugin.Context {
   return {

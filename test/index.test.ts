@@ -3,8 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { Plugin } from "@opencode/plugin";
-import plugin from "./index.ts";
-import { stateKey } from "./state.ts";
+import plugin from "../src/index.ts";
+import { stateKey } from "../src/state.ts";
 
 type Prompt = { sessionID: string; text: string; delivery: "steer" | "queue" };
 type Command = {
