@@ -32,6 +32,8 @@ Ponytailに着想を得た独立したプラグイン。Ponytailには依存せ�
 
 状態はセッション単位。新規セッションはONで開始する。規則は通常のターン、ツール後の継続、圧縮へ適用する。タイトル生成には適用しない。
 
+Ponytailが読み込まれ有効な場合、Mushroomは警告し、`/ponytail off`を実行するよう案内する。Ponytailの状態は変更しない。
+
 ## 規則
 
 規則の原本は`rules/SKILL.md`だけ。
@@ -40,9 +42,11 @@ Ponytailに着想を得た独立したプラグイン。Ponytailには依存せ�
 
 ```sh
 npm install
-npm run check    # Biome
-npm run verify   # Biome、型検査、テスト
+npm run check    # Biomeとrumdl
+npm run verify   # 検査、型検査、テスト
 ```
+
+[Biome](https://biomejs.dev/)と[rumdl](https://rumdl.dev/)が必要。MD013は`.rumdl.toml`で無効。
 
 ## ライセンス
 

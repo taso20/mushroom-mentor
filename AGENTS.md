@@ -2,8 +2,9 @@
 
 ## Before finishing any change
 
-Run `npm run check` (Biome). Fix every finding. Then run `npm run verify`
-(Biome, typecheck, tests). Do not claim work is done while either fails.
+Run `npm run check` (Biome for code, rumdl for Markdown). Fix every
+finding. Then run `npm run verify` (checks, typecheck, tests). Do not claim
+work is done while either fails.
 
 ## Layout
 

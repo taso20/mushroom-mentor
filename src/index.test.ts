@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import type { Plugin } from "@opencode/plugin";
 import plugin from "./index.ts";
 import { stateKey } from "./state.ts";
@@ -13,7 +16,7 @@ type Hook = {
   run: (event: { sessionID: string; system: { type: "text"; text: string }[] }) => Promise<void>;
 };
 
-function makeContext(store = new Map<string, unknown>()) {
+function makeContext(store = new Map<string, unknown>(), ponytailLoaded = false) {
   const skills: { autoinvoke?: boolean; content: string; path: string }[] = [];
   const hooks: Hook[] = [];
   const commands = new Map<string, Command>();
@@ -21,6 +24,12 @@ function makeContext(store = new Map<string, unknown>()) {
   const removed: string[] = [];
 
   const ctx = {
+    plugin: {
+      list: async () => ({
+        location: { directory: "/tmp" },
+        data: ponytailLoaded ? [{ id: "ponytail" }] : [],
+      }),
+    },
     skill: {
       transform: async (callback: (editor: { add: (skill: (typeof skills)[number]) => void }) => void) => {
         callback({ add: (skill) => skills.push(skill) });
@@ -64,8 +73,8 @@ function makeContext(store = new Map<string, unknown>()) {
   return { ctx: ctx as unknown as Plugin.Context, skills, hooks, commands, prompts, removed, store };
 }
 
-async function start(store = new Map<string, unknown>()) {
-  const fake = makeContext(store);
+async function start(store = new Map<string, unknown>(), ponytailLoaded = false) {
+  const fake = makeContext(store, ponytailLoaded);
   const cleanup = await plugin.setup(fake.ctx);
   return { ...fake, cleanup };
 }
@@ -90,6 +99,53 @@ describe("plugin setup", () => {
       await Bun.sleep(1);
     }
     expect(removed).toEqual([stateKey("gone")]);
+  });
+});
+
+describe("Ponytail warning", () => {
+  test("setup does not change Ponytail's state", async () => {
+    const original = process.env.XDG_CONFIG_HOME;
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mushroom-handoff-"));
+    process.env.XDG_CONFIG_HOME = dir;
+    try {
+      fs.mkdirSync(path.join(dir, "opencode"));
+      const file = path.join(dir, "opencode", ".ponytail-active");
+      fs.writeFileSync(file, "full");
+
+      await start(new Map(), true);
+
+      expect(fs.readFileSync(file, "utf8")).toBe("full");
+    } finally {
+      if (original === undefined) delete process.env.XDG_CONFIG_HOME;
+      else process.env.XDG_CONFIG_HOME = original;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("enabling asks the user to turn Ponytail off and changes nothing", async () => {
+    const original = process.env.XDG_CONFIG_HOME;
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mushroom-handoff-"));
+    process.env.XDG_CONFIG_HOME = dir;
+    try {
+      fs.mkdirSync(path.join(dir, "opencode"));
+      const file = path.join(dir, "opencode", ".ponytail-active");
+      fs.writeFileSync(file, "full");
+
+      const { commands, prompts } = await start(new Map(), true);
+      await commands.get("mushroom")?.execute({ sessionID: "s1", prompt: { text: "on" }, delivery: "steer" });
+
+      expect(fs.readFileSync(file, "utf8")).toBe("full");
+      expect(prompts.at(-1)?.text).toContain("Ponytail is still active");
+
+      await commands
+        .get("mushroom")
+        ?.execute({ sessionID: "s1", prompt: { text: "off" }, delivery: "steer" });
+      expect(prompts.at(-1)?.text).not.toContain("Ponytail");
+    } finally {
+      if (original === undefined) delete process.env.XDG_CONFIG_HOME;
+      else process.env.XDG_CONFIG_HOME = original;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

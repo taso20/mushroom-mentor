@@ -74,6 +74,7 @@ Mushroom固有の差分は次のとおり．
 - 状態はON/OFFの2値とし，強度（lite/full/ultra）と既定値の変更（`default`）を持たない．
 - 状態はセッション単位で保存する．Ponytailのグローバル保存とは異なる．
 - `/mushroom on`と`/mushroom status`は，引数なしの操作を明示するための追加である．
+- Ponytailが読み込まれ有効な場合，MushroomはPonytailを自動で無効化しない．利用者へ`/ponytail off`を案内し，状態の変更は利用者に任せる．
 - 監査，負債一覧，計測は初版の対象外とする．
 
 参照版はPonytail 5.3.3，コミット `96608e078b2d5ea607c5c3b8b5a54d1c1fba6846`．将来の上流変更へ無条件に追従しない．
@@ -321,6 +322,7 @@ if can_view_billing:
 | A13 | 更新・削除と保存状態の処理を確認し，通常作業を継続できる |
 | A14 | 最低対応版と導入手順を，インストール済みパッケージで確認する |
 | A15 | Ponytailの基本操作（引数なしで有効化，`off`，help，review）と操作の意味が一致する．reviewは対象選択とコード無変更だけを揃え，状態表示は1行で統一する |
+| A16 | Ponytailが有効なとき，MushroomはPonytailを自動で変更せず，`/ponytail off`を案内する |
 
 代表的な少数のコード課題で，少なくとも次も確認する．
 

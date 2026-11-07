@@ -21,11 +21,12 @@
     "README.ja.md"
   ],
   "scripts": {
-    "check": "biome check .",
+    "check": "biome check . && rumdl check .",
     "check:write": "biome check --write .",
+    "check:md": "rumdl check .",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "verify": "biome check . && tsc --noEmit && bun test"
+    "verify": "npm run check && tsc --noEmit && bun test"
   },
   "dependencies": {
     "@opencode/plugin": "2.2.5"

@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Plugin, Skill } from "@opencode/plugin";
 import { parseMushroomArgs } from "./args.ts";
+import { isPonytailActive } from "./ponytail.ts";
 import { isEnabled, readState, runSerial, stateKey, writeState } from "./state.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -22,6 +23,17 @@ function stateWord(enabled: boolean): string {
 
 function stateLine(enabled: boolean): string {
   return `Mushroom: ${stateWord(enabled)}`;
+}
+
+async function isPonytailLoadedAndActive(ctx: Plugin.Context): Promise<boolean> {
+  try {
+    const { data: plugins } = await ctx.plugin.list();
+    if (!plugins.some((plugin) => plugin.id?.includes("ponytail") ?? false)) return false;
+    return isPonytailActive();
+  } catch (error) {
+    console.error("mushroom: failed to check Ponytail", error);
+    return false;
+  }
 }
 
 export default Plugin.define({
@@ -100,6 +112,7 @@ export default Plugin.define({
           }
 
           const enabled = action === "on";
+          const ponytail = enabled ? await isPonytailLoadedAndActive(ctx) : false;
           try {
             await runSerial(sessionID, () => writeState(ctx, sessionID, enabled));
           } catch (error) {
@@ -112,10 +125,13 @@ export default Plugin.define({
             return;
           }
 
+          const warning = ponytail
+            ? " Ponytail is still active; tell the user in their language to run /ponytail off. Do not change Ponytail yourself."
+            : "";
           await ctx.session.prompt({
             sessionID,
             delivery,
-            text: `Mushroom is now ${stateWord(enabled)}. Reply with exactly "${stateLine(enabled)}" and nothing else.`,
+            text: `Mushroom is now ${stateWord(enabled)}. Reply with a short line containing exactly "${stateLine(enabled)}".${warning}`,
           });
         },
       });
@@ -135,6 +151,8 @@ Mushroom applies human-friendly coding rules to every turn in this session.
 - /mushroom status: show the state without changing it
 - /mushroom-review [target]: review changes without changing code
 - /mushroom-help: this card
+
+Ponytail cannot run at the same time; run /ponytail off to stop it.
 
 State is ON or OFF for one session. New sessions start ON.
 Rules cover naming, structure, why comments, reuse, safety, and honest reasons. Minimum line count is not a goal.
@@ -175,6 +193,10 @@ Check correctness, safety and data loss, edge cases, missing tests, readability,
         },
       });
     });
+
+    if (await isPonytailLoadedAndActive(ctx)) {
+      console.warn("mushroom: Ponytail is active; run /ponytail off to avoid duplicate rules");
+    }
 
     const abort = new AbortController();
     void (async () => {

@@ -36,6 +36,9 @@ After the first npm release, the package name will replace the path.
 The state is per session. New sessions start ON. Rules apply to normal turns,
 tool continuations, and compaction, not to title generation.
 
+If Ponytail is loaded and on, Mushroom warns and asks you to run `/ponytail off`.
+It never changes Ponytail's state.
+
 ## Rules
 
 The ruleset lives in `rules/SKILL.md`. It is the only source of the rules.
@@ -48,6 +51,9 @@ MIT. See `LICENSE`.
 
 ```sh
 npm install
-npm run check    # Biome lint and format check
-npm run verify   # Biome, typecheck, and tests
+npm run check    # Biome and rumdl
+npm run verify   # checks, typecheck, and tests
 ```
+
+Requires [Biome](https://biomejs.dev/) and [rumdl](https://rumdl.dev/). MD013
+is disabled in `.rumdl.toml`.
