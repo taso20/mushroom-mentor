@@ -113,6 +113,26 @@ export default Plugin.define({
 
           const enabled = action === "on";
           const ponytail = enabled ? await isPonytailLoadedAndActive(ctx) : false;
+          if (ponytail) {
+            const current = await readState(ctx, sessionID).catch(() => "unknown" as const);
+            if (current === "unknown") {
+              await ctx.session.prompt({
+                sessionID,
+                delivery,
+                text: "Tell the user in their language that the Mushroom state could not be read. Do not guess it.",
+              });
+              return;
+            }
+            if (!isEnabled(current)) {
+              await ctx.session.prompt({
+                sessionID,
+                delivery,
+                text: 'Mushroom is still OFF. Ponytail is active; tell the user in their language to run /ponytail off, then run /mushroom again. Reply with a short line containing exactly "Mushroom: OFF". Do not change Ponytail yourself.',
+              });
+              return;
+            }
+          }
+
           try {
             await runSerial(sessionID, () => writeState(ctx, sessionID, enabled));
           } catch (error) {
@@ -152,9 +172,9 @@ Mushroom applies human-friendly coding rules to every turn in this session.
 - /mushroom-review [target]: review changes without changing code
 - /mushroom-help: this card
 
-Ponytail cannot run at the same time; run /ponytail off to stop it.
+Ponytail cannot run at the same time; run /ponytail off to stop it. Mushroom will not turn on until it is off.
 
-State is ON or OFF for one session. New sessions start ON.
+State is ON or OFF for one session. New sessions start OFF; run /mushroom to turn it on.
 Rules cover naming, structure, why comments, reuse, safety, and honest reasons. Minimum line count is not a goal.
 
 Answer in the user's language.${prompt.text.trim() ? ` Ignore these arguments: ${prompt.text.trim()}` : ""}`,

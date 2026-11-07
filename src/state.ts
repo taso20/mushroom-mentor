@@ -24,9 +24,10 @@ export async function writeState(ctx: Plugin.Context, sessionID: string, enabled
   await ctx.storage.set(stateKey(sessionID), { schema: 1, enabled });
 }
 
-// "new" counts as ON so a fresh session gets the rules without a write.
+// "new" counts as OFF so installing the plugin never adds a second ruleset
+// until the user turns Mushroom on.
 export function isEnabled(state: SessionState): boolean {
-  return state === "on" || state === "new";
+  return state === "on";
 }
 
 const tails = new Map<string, Promise<unknown>>();

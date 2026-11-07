@@ -36,11 +36,11 @@ For local development, point `plugins` at this directory instead.
 | `/mushroom-review [target]` | Review changes without changing code |
 | `/mushroom-help` | Show the quick reference |
 
-The state is per session. New sessions start ON. Rules apply to normal turns,
+The state is per session. New sessions start OFF. Run /mushroom to turn it on. Rules apply to normal turns,
 tool continuations, and compaction, not to title generation.
 
-If Ponytail is loaded and on, Mushroom warns and asks you to run `/ponytail off`.
-It never changes Ponytail's state.
+If Ponytail is loaded and on, Mushroom refuses to turn on and asks you to run
+`/ponytail off` first. It never changes Ponytail's state.
 
 ## Rules
 

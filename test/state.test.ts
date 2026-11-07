@@ -18,7 +18,7 @@ function fakeContext(store = new Map<string, unknown>()): Plugin.Context {
 }
 
 describe("session state", () => {
-  test("an unregistered session starts new, which counts as ON", async () => {
+  test("an unregistered session is new", async () => {
     const ctx = fakeContext();
     expect(await readState(ctx, "s1")).toBe("new");
   });
@@ -53,9 +53,9 @@ describe("session state", () => {
 });
 
 describe("isEnabled", () => {
-  test("counts new and on as enabled, off and unknown as disabled", () => {
+  test("counts only on as enabled", () => {
     expect(isEnabled("on")).toBe(true);
-    expect(isEnabled("new")).toBe(true);
+    expect(isEnabled("new")).toBe(false);
     expect(isEnabled("off")).toBe(false);
     expect(isEnabled("unknown")).toBe(false);
   });
