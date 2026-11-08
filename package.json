@@ -1,6 +1,6 @@
 {
   "name": "mushroom-mentor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Coding rules that keep generated code clear, changeable, and honest about why",
   "keywords": [
     "opencode",
