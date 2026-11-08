@@ -34,6 +34,8 @@ opencode plugin add mushroom-mentor
 | `/mushroom-review [対象]` | コードを変更せずレビューする |
 | `/mushroom-help` | 簡単な案内を表示する |
 
+`@mushroom`で規則を参照できる。`@mushroom-review`でコードを変更せずレビューを依頼できる。`@`でスキルを読み込むだけでは状態は変わらない。有効化・無効化には`/mushroom`を使う。
+
 状態はセッション単位。新規セッションはOFFで開始する。`/mushroom`で有効化する。規則は通常のターン、ツール後の継続、圧縮へ適用する。タイトル生成には適用しない。
 
 Ponytailが読み込まれ有効な場合、Mushroomは有効化を拒否し、先に`/ponytail off`を実行するよう案内する。Ponytailの状態は変更しない。

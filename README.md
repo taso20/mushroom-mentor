@@ -36,6 +36,8 @@ For local development, point `plugins` at this directory instead.
 | `/mushroom-review [target]` | Review changes without changing code |
 | `/mushroom-help` | Show the quick reference |
 
+Use `@mushroom` to load the coding rules and `@mushroom-review` to request a read-only review. Loading a skill with `@` does not change the session state; use `/mushroom` to turn the rules on or off.
+
 The state is per session. New sessions start OFF. Run /mushroom to turn it on. Rules apply to normal turns,
 tool continuations, and compaction, not to title generation.
 

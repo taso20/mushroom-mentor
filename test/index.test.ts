@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -17,7 +17,7 @@ type Hook = {
 };
 
 function makeContext(store = new Map<string, unknown>(), ponytailLoaded = false, failReads = false) {
-  const skills: { autoinvoke?: boolean; content: string; path: string }[] = [];
+  const skills: { id: string; autoinvoke?: boolean; content: string; path: string }[] = [];
   const hooks: Hook[] = [];
   const commands = new Map<string, Command>();
   const prompts: Prompt[] = [];
@@ -83,16 +83,53 @@ async function start(store = new Map<string, unknown>(), ponytailLoaded = false,
 }
 
 describe("plugin setup", () => {
-  test("registers the hidden rules skill, both hooks, and three commands", async () => {
+  test("advertises Mushroom and review skills without replacing slash commands", async () => {
     const { skills, hooks, commands, cleanup } = await start();
 
-    expect(skills).toHaveLength(1);
-    expect(skills[0]?.autoinvoke).toBe(false);
-    expect(skills[0]?.content.length).toBeGreaterThan(0);
-    expect(skills[0]?.path.endsWith("rules/SKILL.md")).toBe(true);
+    expect(skills.map(({ id }) => id)).toEqual(["mushroom", "mushroom-review"]);
+    expect(skills[0]?.content).toContain("/mushroom");
+    expect(skills[0]?.content).toContain("## Priorities");
+    expect(skills[1]?.content).toContain("Do not change code");
+    expect(skills.every(({ autoinvoke }) => autoinvoke !== false)).toBe(true);
     expect(hooks.map((hook) => hook.name)).toEqual(["context", "compaction"]);
     expect([...commands.keys()]).toEqual(["mushroom", "mushroom-help", "mushroom-review"]);
     expect(typeof cleanup).toBe("function");
+  });
+
+  test("keeps commands working when the review instructions cannot be read", async () => {
+    const read = fs.readFileSync.bind(fs);
+    const fileRead = spyOn(fs, "readFileSync").mockImplementation(((file: string, encoding: string) => {
+      if (String(file).endsWith("mushroom-review.md")) throw new Error("missing review file");
+      return read(file, encoding as BufferEncoding);
+    }) as typeof fs.readFileSync);
+
+    try {
+      const { skills, commands, prompts, store } = await start();
+      expect(skills.map(({ id }) => id)).toEqual(["mushroom"]);
+      await commands.get("mushroom")?.execute({ sessionID: "s1", prompt: { text: "on" }, delivery: "steer" });
+      expect(store.get(stateKey("s1"))).toEqual({ schema: 1, enabled: true });
+      expect(prompts.at(-1)?.text).toContain("Mushroom: ON");
+    } finally {
+      fileRead.mockRestore();
+    }
+  });
+
+  test("keeps slash review working when the coding rules cannot be read", async () => {
+    const read = fs.readFileSync.bind(fs);
+    const fileRead = spyOn(fs, "readFileSync").mockImplementation(((file: string, encoding: string) => {
+      if (String(file).endsWith("rules/SKILL.md")) throw new Error("missing coding rules");
+      return read(file, encoding as BufferEncoding);
+    }) as typeof fs.readFileSync);
+
+    try {
+      const { commands, prompts } = await start();
+      await commands
+        .get("mushroom-review")
+        ?.execute({ sessionID: "s1", prompt: { text: "" }, delivery: "steer" });
+      expect(prompts.at(-1)?.text).toContain("Review the requested change");
+    } finally {
+      fileRead.mockRestore();
+    }
   });
 
   test("removes the stored state when a session is deleted", async () => {
@@ -177,6 +214,28 @@ describe("Ponytail warning", () => {
 });
 
 describe("mushroom command", () => {
+  test("help lists both skill entry points", async () => {
+    const { commands, prompts } = await start();
+
+    await commands
+      .get("mushroom-help")
+      ?.execute({ sessionID: "s1", prompt: { text: "" }, delivery: "steer" });
+
+    expect(prompts.at(-1)?.text).toContain("@mushroom: load the rules");
+    expect(prompts.at(-1)?.text).toContain("@mushroom-review: review changes without changing code");
+  });
+
+  test("slash review uses the same instructions as the review skill", async () => {
+    const { skills, commands, prompts } = await start();
+    await commands
+      .get("mushroom-review")
+      ?.execute({ sessionID: "s1", prompt: { text: "src/index.ts" }, delivery: "steer" });
+
+    const review = skills.find(({ id }) => id === "mushroom-review");
+    expect(prompts.at(-1)?.text).toContain("Target: src/index.ts");
+    expect(prompts.at(-1)?.text).toContain(review?.content.trim());
+  });
+
   test("off saves the state and replies with the state line", async () => {
     const { commands, prompts, store } = await start();
 

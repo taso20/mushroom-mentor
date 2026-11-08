@@ -8,6 +8,7 @@ import { isEnabled, readState, runSerial, stateKey, writeState } from "./state.t
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const rulesPath = path.resolve(here, "../rules/SKILL.md");
+const reviewPath = path.resolve(here, "../rules/mushroom-review.md");
 
 // The rules file is the only source of the ruleset. Frontmatter is for discovery by
 // other harnesses; the prompt gets the body.
@@ -48,16 +49,31 @@ export default Plugin.define({
       console.error("mushroom: failed to read rules; commands keep working", error);
     }
 
+    let review: string | undefined;
+    try {
+      review = fs.readFileSync(reviewPath, "utf8");
+    } catch (error) {
+      console.error("mushroom: failed to read review instructions; review skill unavailable", error);
+    }
+
     if (rules) {
       await ctx.skill.transform((editor) => {
         editor.add({
-          id: Skill.ID.make("mushroom-rules"),
+          id: Skill.ID.make("mushroom"),
           name: Skill.Name.make("Mushroom"),
-          description: "Human-friendly coding rules applied by Mushroom",
-          autoinvoke: false,
+          description: "Human-friendly coding rules; use /mushroom to turn them on or off",
           path: Skill.Info.fields.path.make(rulesPath),
-          content: rules,
+          content: `${rules}\n\nUse /mushroom to turn these rules on or off for the session. Loading this skill does not change the state.`,
         });
+        if (review) {
+          editor.add({
+            id: Skill.ID.make("mushroom-review"),
+            name: Skill.Name.make("Mushroom Review"),
+            description: "Review code using Mushroom rules without editing it",
+            path: Skill.Info.fields.path.make(reviewPath),
+            content: review,
+          });
+        }
       });
 
       const inject = async (event: { sessionID: string; system: { type: "text"; text: string }[] }) => {
@@ -171,6 +187,8 @@ Mushroom applies human-friendly coding rules to every turn in this session.
 - /mushroom status: show the state without changing it
 - /mushroom-review [target]: review changes without changing code
 - /mushroom-help: this card
+- @mushroom: load the rules without changing the state
+- @mushroom-review: review changes without changing code
 
 Ponytail cannot run at the same time; run /ponytail off to stop it. Mushroom will not turn on until it is off.
 
@@ -187,6 +205,14 @@ Answer in the user's language.${prompt.text.trim() ? ` Ignore these arguments: $
         description: "Review changes for correctness, safety, readability, and why",
         execute: async ({ sessionID, prompt, delivery }) => {
           const target = prompt.text.trim();
+          if (!review) {
+            await ctx.session.prompt({
+              sessionID,
+              delivery,
+              text: "Tell the user in their language that Mushroom review is unavailable because its instructions could not be read.",
+            });
+            return;
+          }
           const files = prompt.files?.map(({ uri, source, name, description }) => ({
             uri,
             source,
@@ -197,18 +223,7 @@ Answer in the user's language.${prompt.text.trim() ? ` Ignore these arguments: $
             sessionID,
             delivery,
             files,
-            text: `Review the requested change like the senior developer who will be paged when it breaks.
-
-Target: ${target || "the uncommitted changes. If there are none, the last commit. If there is no commit, say there is nothing to review."}
-
-Read the code the change touches: callers of every changed function, the functions it calls, the tests, and the README. A change can break code it does not touch.
-
-Report in this order:
-1. The target and comparison range, then 2 to 3 sentences on what the change does.
-2. Numbered findings grouped Must fix, Should fix, Nice to have. Each finding: a bold title with path:line, then what it is, the problem, the fix, and the cost of skipping it.
-3. A verdict, then what was not checked and which checks were not run.
-
-Check correctness, safety and data loss, edge cases, missing tests, readability, naming, structure, and missing or invented why comments. Do not change code. Do not invent a reason for a change. Answer in the user's language.`,
+            text: `Target: ${target || "the uncommitted changes. If there are none, the last commit. If there is no commit, say there is nothing to review."}\n\n${review}`,
           });
         },
       });
